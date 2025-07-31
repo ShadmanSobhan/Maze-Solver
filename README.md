@@ -1,2 +1,2 @@
 # Maze-Solver
-HTML code for an interactive maze solving agent
+This repo contains a HTML code for an interactive maze solving agent
