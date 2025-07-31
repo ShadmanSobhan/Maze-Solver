@@ -13,7 +13,7 @@
         }
         body {
             font-family: 'Roboto', sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #4776E6 100%);
             min-height: 100vh;
             color: #e0e0e0;
             overflow-x: hidden;
@@ -26,13 +26,13 @@
         .header {
             text-align: center;
             margin-bottom: 30px;
-            color: #fff;
+            color: white;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
         }
         .header h1 {
             font-family: 'Orbitron', sans-serif;
             font-size: 3em;
             margin-bottom: 10px;
-            text-shadow: 0 0 15px rgba(136, 84, 207, 0.8);
             letter-spacing: 1px;
         }
         .header p {
@@ -40,9 +40,9 @@
             opacity: 0.9;
         }
         .controls {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
             padding: 25px;
             border-radius: 20px;
             margin-bottom: 25px;
@@ -92,12 +92,12 @@
         .tool-button:hover::before {
             left: 100%;
         }
-        .wall-tool { background: #2c3e50; color: white; }
-        .path-tool { background: #ecf0f1; color: #2c3e50; }
-        .start-tool { background: #27ae60; color: white; }
-        .end-tool { background: #e74c3c; color: white; }
-        .clear-tool { background: #f39c12; color: white; }
-        .solve-tool { background: #9b59b6; color: white; }
+        .wall-tool { background: #1e3a8a; color: white; }
+        .path-tool { background: #f8fafc; color: #334155; }
+        .start-tool { background: #059669; color: white; }
+        .end-tool { background: #dc2626; color: white; }
+        .clear-tool { background: #d97706; color: white; }
+        .solve-tool { background: #7c3aed; color: white; }
 
         .size-control {
             display: flex;
@@ -110,20 +110,25 @@
         .size-control input {
             width: 60px;
             padding: 8px;
-            border: 2px solid #ddd;
+            border: 2px solid rgba(255, 255, 255, 0.4);
             border-radius: 8px;
             text-align: center;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
             font-size: 16px;
+        }
+        .size-control input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
         }
         .algorithm-selector select {
             padding: 12px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.4);
             border-radius: 12px;
             background: rgba(255, 255, 255, 0.15);
             color: white;
             font-size: 16px;
-            backdrop-filter: blur(5px);
             min-width: 200px;
+            backdrop-filter: blur(5px);
         }
         .main-content {
             display: grid;
@@ -134,7 +139,7 @@
         .panel {
             background: rgba(255, 255, 255, 0.08);
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 20px;
             padding: 25px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
@@ -176,10 +181,13 @@
             z-index: 10;
             box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
         }
-        .cell.wall { background: #2c3e50; }
-        .cell.path { background: #ecf0f1; opacity: 0.8; }
+        .cell.wall { background: #1e3a8a; } /* Deep blue */
+        .cell.path { 
+            background: #f8fafc; 
+            opacity: 0.8; 
+        }
         .cell.start { 
-            background: #27ae60;
+            background: #059669;
             position: relative;
             animation: pulse 1.5s infinite;
         }
@@ -195,7 +203,7 @@
             text-shadow: 0 0 5px black;
         }
         .cell.end { 
-            background: #e74c3c;
+            background: #dc2626;
             position: relative;
             animation: pulse 1.5s infinite;
         }
@@ -211,19 +219,19 @@
             text-shadow: 0 0 5px black;
         }
         .cell.explored {
-            background: rgba(155, 89, 182, 0.4);
-            box-shadow: 0 0 8px rgba(155, 89, 182, 0.6);
+            background: rgba(139, 92, 246, 0.4); /* Purple glow */
+            box-shadow: 0 0 8px rgba(139, 92, 246, 0.6);
             border: 1px solid rgba(255, 255, 255, 0.3);
         }
         .cell.current {
-            background: #3498db;
+            background: #3b82f6; /* Bright blue */
             animation: bounce 0.5s infinite;
-            box-shadow: 0 0 15px rgba(52, 152, 219, 0.8);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.8);
             border: 2px solid white;
             z-index: 5;
         }
         .cell.solution {
-            background: #1a751a;
+            background: #1a751a; /* Dark green */
             border: 2px solid #2ecc71;
             box-shadow: 0 0 15px rgba(46, 204, 113, 0.7);
             animation: solutionGlow 1.5s infinite alternate;
@@ -253,7 +261,7 @@
         }
         .progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, #27ae60, #2ecc71);
+            background: linear-gradient(90deg, #059669, #2ecc71);
             width: 0%;
             transition: width 0.4s ease;
             box-shadow: 0 0 5px rgba(46, 204, 113, 0.5);
@@ -267,7 +275,7 @@
             font-size: 1.1em;
             background: rgba(255, 255, 255, 0.1);
         }
-        .status.ready { color: #27ae60; }
+        .status.ready { color: #2ecc71; }
         .status.solving { color: #fdcb6e; }
         .status.solved { color: #00b894; }
         .status.no-solution { color: #e17055; }
@@ -440,24 +448,33 @@
                     cell.className = `cell ${maze[y][x]}`;
                     cell.dataset.x = x;
                     cell.dataset.y = y;
+
                     if (containerId === 'designerMaze') {
                         cell.addEventListener('mousedown', (e) => {
                             e.preventDefault();
                             isMouseDown = true;
                             paintCell(x, y);
                         });
+
                         cell.addEventListener('mouseenter', () => {
                             if (isMouseDown) paintCell(x, y);
                         });
                     }
+
                     container.appendChild(cell);
                 }
             }
         }
 
-        // Paint cell
+        // Fix: Prevent painting on hover-only
+        document.addEventListener('mouseup', () => {
+            isMouseDown = false;
+        });
+
+        // Paint cell with current tool
         function paintCell(x, y) {
             if (solving) return;
+
             if (currentTool === 'start') {
                 if (startPos) maze[startPos.y][startPos.x] = 'path';
                 startPos = {x, y};
@@ -471,6 +488,7 @@
                 if (endPos && endPos.x === x && endPos.y === y) endPos = null;
                 maze[y][x] = currentTool;
             }
+
             renderMaze('designerMaze');
             updateDesignProgress();
         }
@@ -623,7 +641,7 @@
             return {path: [], explored};
         }
 
-        // Dijkstra (same as BFS for unweighted)
+        // Dijkstra
         async function dijkstraSolve() {
             return await bfsSolve();
         }
@@ -703,28 +721,17 @@
             return {path, explored};
         }
 
-        // Visualize solution path with traveling highlight
+        // Visualize solution path with glow
         async function visualizeSolutionPath(path) {
             const solverMaze = document.getElementById('solverMaze');
             const cells = solverMaze.children;
 
-            // First, mark all path cells
             for (let i = 1; i < path.length - 1; i++) {
                 const {x, y} = path[i];
                 const idx = y * width + x;
                 const cell = cells[idx];
                 cell.classList.add('solution');
-                await new Promise(r => setTimeout(r, 80));
-            }
-
-            // Then add a traveling highlight effect
-            for (let i = 1; i < path.length - 1; i++) {
-                const {x, y} = path[i];
-                const idx = y * width + x;
-                const cell = cells[idx];
-                cell.style.boxShadow = '0 0 20px #fff, 0 0 30px #00ff00';
-                await new Promise(r => setTimeout(r, 120));
-                cell.style.boxShadow = '0 0 15px rgba(46, 204, 113, 0.7)';
+                await new Promise(r => setTimeout(r, 100));
             }
         }
 
