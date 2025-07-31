@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Maze Builder & AI Solver</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .controls {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .control-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .tool-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .tool-button:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .tool-button:hover:before {
+            left: 100%;
+        }
+        
+        .tool-button.active {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .wall-tool { background: #2c3e50; color: white; }
+        .path-tool { background: #ecf0f1; color: #2c3e50; border: 2px solid #bdc3c7; }
+        .start-tool { background: #27ae60; color: white; }
+        .end-tool { background: #e74c3c; color: white; }
+        .clear-tool { background: #f39c12; color: white; }
+        .solve-tool { background: #9b59b6; color: white; }
+        
+        .size-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .size-control input {
+            width: 60px;
+            padding: 5px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .panel h3 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+            text-align: center;
+            font-size: 1.2em;
+        }
+        
+        .maze-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+        
+        .maze {
+            display: grid;
+            gap: 1px;
+            background: #34495e;
+            padding: 2px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .cell {
+            width: 25px;
+            height: 25px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-radius: 2px;
+            position: relative;
+        }
+        
+        .cell:hover {
+            transform: scale(1.1);
+            z-index: 10;
+        }
+        
+        .cell.wall { background: #2c3e50; }
+        .cell.path { background: #ecf0f1; }
+        .cell.start { 
+            background: #27ae60; 
+            position: relative;
+        }
+        .cell.start:after {
+            content: 'S';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .cell.end { 
+            background: #e74c3c;
+            position: relative;
+        }
+        .cell.end:after {
+            content: 'E';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .cell.solution { 
+            background: #f39c12;
+            animation: pulse 1s infinite;
+        }
+        .cell.explored { 
+            background: rgba(155, 89, 182, 0.3);
+            animation: fadeIn 0.3s ease;
+        }
+        .cell.current { 
+            background: #3498db;
+            animation: bounce 0.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        
+        .algorithm-selector {
+            margin: 15px 0;
+        }
+        
+        .algorithm-selector select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #ecf0f1;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #27ae60, #2ecc71);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        
+        .status.ready { background: #d5f4e6; color: #27ae60; }
+        .status.solving { background: #ffeaa7; color: #fdcb6e; }
+        .status.solved { background: #74b9ff; color: #0984e3; }
+        .status.no-solution { background: #fab1a0; color: #e17055; }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .control-row {
+                justify-content: center;
+            }
+            
+            .cell {
+                width: 20px;
+                height: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Interactive Maze Builder & AI Solver</h1>
+            <p>Design your maze and watch AI find the optimal path!</p>
+        </div>
+        
+        <div class="controls">
+            <div class="control-row">
+                <div class="size-control">
+                    <label>Size:</label>
+                    <input type="number" id="mazeWidth" value="15" min="5" max="25">
+                    <span>×</span>
+                    <input type="number" id="mazeHeight" value="15" min="5" max="25">
+                    <button class="tool-button clear-tool" onclick="createMaze()">Resize</button>
+                </div>
+                
+                <div class="algorithm-selector">
+                    <select id="algorithmSelect">
+                        <option value="astar">A* Algorithm</option>
+                        <option value="dijkstra">Dijkstra's Algorithm</option>
+                        <option value="bfs">Breadth-First Search</option>
+                        <option value="dfs">Depth-First Search</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="control-row">
+                <button class="tool-button wall-tool" onclick="setTool('wall')" id="wallTool">🧱 Wall</button>
+                <button class="tool-button path-tool active" onclick="setTool('path')" id="pathTool">🛤️ Path</button>
+                <button class="tool-button start-tool" onclick="setTool('start')" id="startTool">🚀 Start</button>
+                <button class="tool-button end-tool" onclick="setTool('end')" id="endTool">🎯 End</button>
+                <button class="tool-button clear-tool" onclick="clearMaze()">🗑️ Clear All</button>
+                <button class="tool-button solve-tool" onclick="solveMaze()" id="solveBtn">🧠 Solve Maze</button>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="panel">
+                <h3>🎨 Maze Designer</h3>
+                <div class="status ready" id="designerStatus">Ready to design! Click cells to build your maze.</div>
+                <div class="maze-container">
+                    <div class="maze" id="designerMaze"></div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="designProgress"></div>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <h3>🤖 AI Solver Visualization</h3>
+                <div class="status ready" id="solverStatus">Waiting for maze to solve...</div>
+                <div class="maze-container">
+                    <div class="maze" id="solverMaze"></div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="solveProgress"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="pathLength">0</div>
+                <div class="stat-label">Path Length</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="exploredCells">0</div>
+                <div class="stat-label">Cells Explored</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="executionTime">0ms</div>
+                <div class="stat-label">Execution Time</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="efficiency">0%</div>
+                <div class="stat-label">Path Efficiency</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let maze = [];
+        let currentTool = 'path';
+        let startPos = null;
+        let endPos = null;
+        let width = 15;
+        let height = 15;
+        let isMouseDown = false;
+        let solving = false;
+
+        // Initialize the application
+        function init() {
+            createMaze();
+            updateStats();
+        }
+
+        // Create a new maze
+        function createMaze() {
+            width = parseInt(document.getElementById('mazeWidth').value);
+            height = parseInt(document.getElementById('mazeHeight').value);
+            
+            maze = Array(height).fill().map(() => Array(width).fill('path'));
+            startPos = null;
+            endPos = null;
+            
+            renderMaze('designerMaze');
+            renderMaze('solverMaze');
+            updateStats();
+            
+            document.getElementById('designerStatus').textContent = 'Ready to design! Click cells to build your maze.';
+            document.getElementById('designerStatus').className = 'status ready';
+            document.getElementById('solverStatus').textContent = 'Waiting for maze to solve...';
+            document.getElementById('solverStatus').className = 'status ready';
+        }
+
+        // Render maze in specified container
+        function renderMaze(containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            container.style.gridTemplateColumns = `repeat(${width}, 1fr)`;
+            
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = `cell ${maze[y][x]}`;
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+                    
+                    if (containerId === 'designerMaze') {
+                        cell.addEventListener('mousedown', (e) => {
+                            e.preventDefault();
+                            isMouseDown = true;
+                            paintCell(x, y);
+                        });
+                        
+                        cell.addEventListener('mouseenter', () => {
+                            if (isMouseDown) paintCell(x, y);
+                        });
+                        
+                        cell.addEventListener('mouseup', () => {
+                            isMouseDown = false;
+                        });
+                    }
+                    
+                    container.appendChild(cell);
+                }
+            }
+        }
+
+        // Handle mouse events
+        document.addEventListener('mouseup', () => {
+            isMouseDown = false;
+        });
+
+        // Paint cell with current tool
+        function paintCell(x, y) {
+            if (solving) return;
+            
+            if (currentTool === 'start') {
+                if (startPos) maze[startPos.y][startPos.x] = 'path';
+                startPos = {x, y};
+                maze[y][x] = 'start';
+            } else if (currentTool === 'end') {
+                if (endPos) maze[endPos.y][endPos.x] = 'path';
+                endPos = {x, y};
+                maze[y][x] = 'end';
+            } else {
+                if (startPos && startPos.x === x && startPos.y === y) startPos = null;
+                if (endPos && endPos.x === x && endPos.y === y) endPos = null;
+                maze[y][x] = currentTool;
+            }
+            
+            renderMaze('designerMaze');
+            updateDesignProgress();
+        }
+
+        // Set current tool
+        function setTool(tool) {
+            if (solving) return;
+            
+            currentTool = tool;
+            document.querySelectorAll('.tool-button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tool + 'Tool').classList.add('active');
+        }
+
+        // Clear the maze
+        function clearMaze() {
+            if (solving) return;
+            
+            maze = Array(height).fill().map(() => Array(width).fill('path'));
+            startPos = null;
+            endPos = null;
+            renderMaze('designerMaze');
+            renderMaze('solverMaze');
+            updateStats();
+            
+            document.getElementById('designerStatus').textContent = 'Maze cleared! Start designing.';
+            document.getElementById('designerStatus').className = 'status ready';
+            document.getElementById('solverStatus').textContent = 'Waiting for maze to solve...';
+            document.getElementById('solverStatus').className = 'status ready';
+        }
+
+        // Update design progress
+        function updateDesignProgress() {
+            const totalCells = width * height;
+            const designedCells = maze.flat().filter(cell => cell !== 'path').length;
+            const progress = (designedCells / totalCells) * 100;
+            document.getElementById('designProgress').style.width = progress + '%';
+        }
+
+        // Main solve function
+        async function solveMaze() {
+            if (solving) return;
+            if (!startPos || !endPos) {
+                alert('Please set both start and end points!');
+                return;
+            }
+            
+            solving = true;
+            document.getElementById('solveBtn').textContent = '⏳ Solving...';
+            document.getElementById('solverStatus').textContent = 'AI is thinking...';
+            document.getElementById('solverStatus').className = 'status solving';
+            
+            const algorithm = document.getElementById('algorithmSelect').value;
+            const startTime = performance.now();
+            
+            let result;
+            switch (algorithm) {
+                case 'astar':
+                    result = await aStarSolve();
+                    break;
+                case 'dijkstra':
+                    result = await dijkstraSolve();
+                    break;
+                case 'bfs':
+                    result = await bfsSolve();
+                    break;
+                case 'dfs':
+                    result = await dfsSolve();
+                    break;
+            }
+            
+            const endTime = performance.now();
+            const executionTime = Math.round(endTime - startTime);
+            
+            updateFinalStats(result, executionTime);
+            
+            document.getElementById('solveBtn').textContent = '🧠 Solve Maze';
+            solving = false;
+        }
+
+        // A* Algorithm implementation
+        async function aStarSolve() {
+            const openSet = [{...startPos, g: 0, h: 0, f: 0, parent: null}];
+            const closedSet = new Set();
+            const explored = new Set();
+            
+            function heuristic(a, b) {
+                return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+            }
+            
+            function getNeighbors(node) {
+                const neighbors = [];
+                const directions = [{x: 0, y: 1}, {x: 1, y: 0}, {x: 0, y: -1}, {x: -1, y: 0}];
+                
+                for (const dir of directions) {
+                    const x = node.x + dir.x;
+                    const y = node.y + dir.y;
+                    
+                    if (x >= 0 && x < width && y >= 0 && y < height && maze[y][x] !== 'wall') {
+                        neighbors.push({x, y});
+                    }
+                }
+                return neighbors;
+            }
+            
+            while (openSet.length > 0) {
+                openSet.sort((a, b) => a.f - b.f);
+                const current = openSet.shift();
+                const currentKey = `${current.x},${current.y}`;
+                
+                if (closedSet.has(currentKey)) continue;
+                closedSet.add(currentKey);
+                
+                // Visualize current exploration
+                if (current.x !== startPos.x || current.y !== startPos.y) {
+                    explored.add(currentKey);
+                    await visualizeExploration(current, explored);
+                }
+                
+                if (current.x === endPos.x && current.y === endPos.y) {
+                    return reconstructPath(current, explored);
+                }
+                
+                const neighbors = getNeighbors(current);
+                for (const neighbor of neighbors) {
+                    const neighborKey = `${neighbor.x},${neighbor.y}`;
+                    if (closedSet.has(neighborKey)) continue;
+                    
+                    const g = current.g + 1;
+                    const h = heuristic(neighbor, endPos);
+                    const f = g + h;
+                    
+                    const existingNode = openSet.find(n => n.x === neighbor.x && n.y === neighbor.y);
+                    if (!existingNode || g < existingNode.g) {
+                        if (existingNode) {
+                            existingNode.g = g;
+                            existingNode.f = f;
+                            existingNode.parent = current;
+                        } else {
+                            openSet.push({...neighbor, g, h, f, parent: current});
+                        }
+                    }
+                }
+            }
+            
+            return {path: [], explored};
+        }
+
+        // BFS Algorithm implementation
+        async function bfsSolve() {
+            const queue = [{...startPos, parent: null}];
+            const visited = new Set();
+            const explored = new Set();
+            
+            function getNeighbors(node) {
+                const neighbors = [];
+                const directions = [{x: 0, y: 1}, {x: 1, y: 0}, {x: 0, y: -1}, {x: -1, y: 0}];
+                
+                for (const dir of directions) {
+                    const x = node.x + dir.x;
+                    const y = node.y + dir.y;
+                    
+                    if (x >= 0 && x < width && y >= 0 && y < height && maze[y][x] !== 'wall') {
+                        neighbors.push({x, y});
+                    }
+                }
+                return neighbors;
+            }
+            
+            while (queue.length > 0) {
+                const current = queue.shift();
+                const currentKey = `${current.x},${current.y}`;
+                
+                if (visited.has(currentKey)) continue;
+                visited.add(currentKey);
+                
+                // Visualize exploration
+                if (current.x !== startPos.x || current.y !== startPos.y) {
+                    explored.add(currentKey);
+                    await visualizeExploration(current, explored);
+                }
+                
+                if (current.x === endPos.x && current.y === endPos.y) {
+                    return reconstructPath(current, explored);
+                }
+                
+                const neighbors = getNeighbors(current);
+                for (const neighbor of neighbors) {
+                    const neighborKey = `${neighbor.x},${neighbor.y}`;
+                    if (!visited.has(neighborKey)) {
+                        queue.push({...neighbor, parent: current});
+                    }
+                }
+            }
+            
+            return {path: [], explored};
+        }
+
+        // Dijkstra's Algorithm (similar to BFS for unweighted maze)
+        async function dijkstraSolve() {
+            return await bfsSolve(); // In unweighted grid, Dijkstra = BFS
+        }
+
+        // DFS Algorithm implementation
+        async function dfsSolve() {
+            const stack = [{...startPos, parent: null}];
+            const visited = new Set();
+            const explored = new Set();
+            
+            function getNeighbors(node) {
+                const neighbors = [];
+                const directions = [{x: 0, y: 1}, {x: 1, y: 0}, {x: 0, y: -1}, {x: -1, y: 0}];
+                
+                for (const dir of directions) {
+                    const x = node.x + dir.x;
+                    const y = node.y + dir.y;
+                    
+                    if (x >= 0 && x < width && y >= 0 && y < height && maze[y][x] !== 'wall') {
+                        neighbors.push({x, y});
+                    }
+                }
+                return neighbors;
+            }
+            
+            while (stack.length > 0) {
+                const current = stack.pop();
+                const currentKey = `${current.x},${current.y}`;
+                
+                if (visited.has(currentKey)) continue;
+                visited.add(currentKey);
+                
+                // Visualize exploration
+                if (current.x !== startPos.x || current.y !== startPos.y) {
+                    explored.add(currentKey);
+                    await visualizeExploration(current, explored);
+                }
+                
+                if (current.x === endPos.x && current.y === endPos.y) {
+                    return reconstructPath(current, explored);
+                }
+                
+                const neighbors = getNeighbors(current);
+                for (const neighbor of neighbors) {
+                    const neighborKey = `${neighbor.x},${neighbor.y}`;
+                    if (!visited.has(neighborKey)) {
+                        stack.push({...neighbor, parent: current});
+                    }
+                }
+            }
+            
+            return {path: [], explored};
+        }
+
+        // Visualize the exploration process
+        async function visualizeExploration(current, explored) {
+            const solverMaze = document.getElementById('solverMaze');
+            const cells = solverMaze.children;
+            
+            // Update explored cells
+            for (const cellKey of explored) {
+                const [x, y] = cellKey.split(',').map(Number);
+                const cellIndex = y * width + x;
+                const cell = cells[cellIndex];
+                
+                if (!cell.classList.contains('start') && !cell.classList.contains('end')) {
+                    cell.classList.add('explored');
+                }
+            }
+            
+            // Highlight current cell
+            const currentIndex = current.y * width + current.x;
+            const currentCell = cells[currentIndex];
+            if (!currentCell.classList.contains('start') && !currentCell.classList.contains('end')) {
+                currentCell.classList.add('current');
+                
+                setTimeout(() => {
+                    currentCell.classList.remove('current');
+                }, 200);
+            }
+            
+            // Update progress
+            const progress = (explored.size / (width * height)) * 100;
+            document.getElementById('solveProgress').style.width = Math.min(progress, 100) + '%';
+            
+            // Small delay for visualization
+            await new Promise(resolve => setTimeout(resolve, 50));
+        }
+
+        // Reconstruct path from the result
+        function reconstructPath(endNode, explored) {
+            const path = [];
+            let current = endNode;
+            
+            while (current) {
+                path.unshift({x: current.x, y: current.y});
+                current = current.parent;
+            }
+            
+            return {path, explored};
+        }
+
+        // Update final statistics and visualize solution
+        async function updateFinalStats(result, executionTime) {
+            const {path, explored} = result;
+            
+            if (path.length === 0) {
+                document.getElementById('solverStatus').textContent = 'No solution found!';
+                document.getElementById('solverStatus').className = 'status no-solution';
+                updateStats(0, explored.size, executionTime, 0);
+                return;
+            }
+            
+            // Visualize the solution path
+            await visualizeSolutionPath(path);
+            
+            document.getElementById('solverStatus').textContent = 'Solution found! 🎉';
+            document.getElementById('solverStatus').className = 'status solved';
+            
+            // Calculate efficiency (optimal path length vs explored cells)
+            const efficiency = Math.round((path.length / explored.size) * 100);
+            updateStats(path.length, explored.size, executionTime, efficiency);
+        }
+
+        // Visualize the solution path
+        async function visualizeSolutionPath(path) {
+            const solverMaze = document.getElementById('solverMaze');
+            const cells = solverMaze.children;
+            
+            for (let i = 1; i < path.length - 1; i++) {
+                const {x, y} = path[i];
+                const cellIndex = y * width + x;
+                const cell = cells[cellIndex];
+                
+                cell.classList.add('solution');
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        }
+
+        // Update statistics display
+        function updateStats(pathLength = 0, exploredCells = 0, executionTime = 0, efficiency = 0) {
+            document.getElementById('pathLength').textContent = pathLength;
+            document.getElementById('exploredCells').textContent = exploredCells;
+            document.getElementById('executionTime').textContent = executionTime + 'ms';
+            document.getElementById('efficiency').textContent = efficiency + '%';
+        }
+
+        // Initialize the application when page loads
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
