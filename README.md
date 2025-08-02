@@ -26,9 +26,7 @@ A Python implementation of various algorithms to solve mazes, featuring visualiz
   - Custom maze input
   - Different difficulty levels
 
-## Installation
+## 🌟 How to Use
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/ShadmanSobhan/Maze-Solver.git
-   cd Maze-Solver
+Try the interactive web version:  
+👉 [Live Demo](https://shadmansobhan.github.io/Maze-Solver/) 👈
